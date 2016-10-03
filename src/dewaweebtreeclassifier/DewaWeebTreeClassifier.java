@@ -19,6 +19,7 @@ import java.util.Random;
 import weka.classifiers.Classifier;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Remove;
+import weka.filters.unsupervised.instance.RemovePercentage;
 
 /**
  *
@@ -26,7 +27,7 @@ import weka.filters.unsupervised.attribute.Remove;
  */
 public class DewaWeebTreeClassifier {
 
-    private static Instances data;
+    private static Instances mData;
 
     public static void printMain() {
         String dialog[] = {
@@ -70,11 +71,11 @@ public class DewaWeebTreeClassifier {
     private void loadFile(String path) throws Exception {
         // Load data
         DataSource source = new DataSource(path);
-        data = source.getDataSet();
+        mData = source.getDataSet();
         // setting class attribute if the data format does not provide this information
         // For example, the XRFF format saves the class attribute information as well
-        if (data.classIndex() == -1) {
-            data.setClassIndex(data.numAttributes() - 1);
+        if (mData.classIndex() == -1) {
+            mData.setClassIndex(mData.numAttributes() - 1);
         }
     }
     
@@ -85,9 +86,11 @@ public class DewaWeebTreeClassifier {
      */
     private Instances resampleInstances() throws Exception {
         Resample sampler = new Resample();
-        sampler.setInputFormat(data);
+        sampler.setInputFormat(mData);
         
-        Instances newData = Resample.useFilter(data, sampler);
+        Instances newData = Resample.useFilter(mData, sampler);
+        newData.setClassIndex(newData.numAttributes() - 1);
+        
         return newData;
     }
     
@@ -99,14 +102,53 @@ public class DewaWeebTreeClassifier {
      */
     private Instances removeAttribute(int[] idxAttrs, boolean invertSelection) throws Exception {
         Remove remove = new Remove();
+        
         remove.setAttributeIndicesArray(idxAttrs);
         remove.setInvertSelection(invertSelection);
-        remove.setInputFormat(data);
+        remove.setInputFormat(mData);
         
-        Instances newData = Filter.useFilter(data, remove);
+        Instances newData = Filter.useFilter(mData, remove);
+        newData.setClassIndex(newData.numAttributes() - 1);
+        
+        return newData;
+    }
+    
+    /**
+     * 
+     * @param tree the model to cross validate the dataset
+     * @return
+     * @throws Exception 
+     */
+    private Evaluation tenCrossValidation(Classifier tree) throws Exception {
+        Evaluation eval = new Evaluation(mData);
+        eval.crossValidateModel(tree, mData, 10, new Random(1));
+        
+        return eval;
+    }
+    
+    /**
+     * 
+     * @param percent how many instances in the dataset will be processed
+     * @param invertSelection invertSelection if true, percent of the dataset will be kept, instead of being removed
+     * @return
+     * @throws Exception 
+     */
+    private Instances percentageSplit(double percent, boolean invertSelection) throws Exception {
+        RemovePercentage split = new RemovePercentage();
+        
+        split.setInvertSelection(invertSelection);
+        split.setPercentage(percent);
+        split.setInputFormat(mData);
+        
+        Instances newData = Filter.useFilter(mData, split);
+        newData.setClassIndex(newData.numAttributes() - 1);
+        
         return newData;
     }
 
+    /**
+     * 
+     */
     public void run() {
         while (true) {
             Scanner sc = new Scanner(System.in);
