@@ -7,10 +7,7 @@ package dewaweebtreeclassifier;
 
 import weka.core.Instances;
 import java.io.BufferedReader;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Scanner;
@@ -188,7 +185,7 @@ public class DewaWeebTreeClassifier {
                         break;
                     case FILTER:
                         // resample case: Get the dataset and re-sample it to get a new dataset
-                        data = this.resampleInstances();
+                        mData = this.resampleInstances();
                         break;
                     case REMOVE:
                         // remove attributes
@@ -205,20 +202,20 @@ public class DewaWeebTreeClassifier {
                         if (invStr.toLowerCase().compareTo("y") == 0)
                             isInv = true;
                         
-                        data = this.removeAttribute(listIdx, isInv);
+                        mData = this.removeAttribute(listIdx, isInv);
                         break;
                     case DISPLAY_DATA:
-                        // Train data
+                        // Display data
                         break;  
                     case TRAINING:
                         // Train data
                         break;   
                     case CLASSIFY:
                         // Copy data
-                        Instances classified = new Instances(data);
+                        Instances classified = new Instances(mData);
                         // Classify data
-                        for (int i = 0; i < data.numInstances(); i++) {
-                            double classifiedLabel = tree.classifyInstance(data.instance(i));
+                        for (int i = 0; i < mData.numInstances(); i++) {
+                            double classifiedLabel = mData.classifyInstancemDatadata.instance(i));
                             classified.instance(i).setClassValue(classifiedLabel);
                         }
                         break;
@@ -240,11 +237,6 @@ public class DewaWeebTreeClassifier {
             Evaluation eval = new Evaluation(data);
             eval.crossValidateModel(tree, data, 10, new Random(1));
             System.out.println(eval.toSummaryString("\nResults\n======\n", false));
-            // Save / Load model using serialization
-            // Save
-            weka.core.SerializationHelper.write("/some/where/j48.model", tree);
-            // Load
-            Classifier cls = (Classifier) weka.core.SerializationHelper.read("/some/where/j48.model");
             // Using model to classify unseen data
             Instances unclassified = new Instances(new BufferedReader(new FileReader("file.arff")));
             unclassified.setClassIndex(unclassified(unclassified.numAttributes() - 1));
