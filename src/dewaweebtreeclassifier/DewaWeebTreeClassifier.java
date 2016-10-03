@@ -17,13 +17,15 @@ import weka.classifiers.trees.J48;
 import weka.classifiers.Evaluation;
 import java.util.Random;
 import weka.classifiers.Classifier;
+import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.Remove;
 
 /**
  *
  * @author Ahmad
  */
 public class DewaWeebTreeClassifier {
-    
+
     private static Instances data;
 
     public static void printMain() {
@@ -39,21 +41,32 @@ public class DewaWeebTreeClassifier {
             System.out.println(line);
         }
     }
-    
+
     enum Menu {
         NOOP,
         LOAD_FILE,
         FILTER,
+        REMOVE,
+        DISPLAY_DATA,
+        TRAINING,
         CLASSIFY
     }
-    
-    static Menu mainMenu[] = { 
-        Menu.NOOP, 
-        Menu.LOAD_FILE, 
-        Menu.FILTER, 
+
+    static Menu mainMenu[] = {
+        Menu.NOOP,
+        Menu.LOAD_FILE,
+        Menu.FILTER,
+        Menu.REMOVE,
+        Menu.DISPLAY_DATA,
+        Menu.TRAINING,
         Menu.CLASSIFY
     };
-    
+
+    /**
+     * 
+     * @param path the .arff or .csv file path
+     * @throws Exception 
+     */
     private void loadFile(String path) throws Exception {
         // Load data
         DataSource source = new DataSource(path);
@@ -65,31 +78,88 @@ public class DewaWeebTreeClassifier {
         }
     }
     
+    /**
+     * resample instances from the whole dataset
+     * @return new dataset after resampling
+     * @throws Exception 
+     */
+    private Instances resampleInstances() throws Exception {
+        Resample sampler = new Resample();
+        sampler.setInputFormat(data);
+        
+        Instances newData = Resample.useFilter(data, sampler);
+        return newData;
+    }
+    
+    /**
+     * 
+     * @param idxAttrs the list of indexes of the attributes to be removed (from 0)
+     * @param invertSelection if true, attributes in idxAttrs will be kept, instead of being removed
+     * @return new dataset after attribute removal
+     */
+    private Instances removeAttribute(int[] idxAttrs, boolean invertSelection) throws Exception {
+        Remove remove = new Remove();
+        remove.setAttributeIndicesArray(idxAttrs);
+        remove.setInvertSelection(invertSelection);
+        remove.setInputFormat(data);
+        
+        Instances newData = Filter.useFilter(data, remove);
+        return newData;
+    }
+
     public void run() {
         while (true) {
             Scanner sc = new Scanner(System.in);
             int choiceNum = sc.nextInt();
             Menu chosenMenu = mainMenu[choiceNum];
 
-            switch (chosenMenu) {
-                case LOAD_FILE:
-                    System.out.print("Please input file path: ");
-                    String filepath = sc.nextLine();
-                    try {
+            try {
+                switch (chosenMenu) {
+                    case LOAD_FILE:
+                        System.out.print("Please input file path: ");
+                        String filepath = sc.nextLine();
                         this.loadFile(filepath);
-                    }
-                    catch (Exception ex) {
-                        System.out.println(ex.getMessage());
-                    }
-                    break;
-                case FILTER:
-                    Resample sampler = new Resample();
-                    sampler.setInputFormat(data);
-                    break;
-                case CLASSIFY:
-                    break;
+                        break;
+                    case FILTER:
+                        // resample case: Get the dataset and re-sample it to get a new dataset
+                        data = this.resampleInstances();
+                        break;
+                    case REMOVE:
+                        // remove attributes
+                        System.out.print("Please input the attribute index to be removed: ");
+                        String idxStr = sc.nextLine();
+                        String[] listIdxStr = idxStr.split("\\s+");
+                        int[] listIdx = new int[listIdxStr.length];
+                        for (int i = 0; i < listIdx.length; i++) {
+                            listIdx[i] = Integer.parseInt(listIdxStr[i]);
+                        }
+                        System.out.print("Invert selection? (Y/N)");
+                        String invStr = sc.nextLine();
+                        boolean isInv = false;
+                        if (invStr.toLowerCase().compareTo("y") == 0)
+                            isInv = true;
+                        
+                        data = this.removeAttribute(listIdx, isInv);
+                        break;
+                    case DISPLAY_DATA:
+                        // Train data
+                        break;  
+                    case TRAINING:
+                        // Train data
+                        break;   
+                    case CLASSIFY:
+                        // Copy data
+                        Instances classified = new Instances(data);
+                        // Classify data
+                        for (int i = 0; i < data.numInstances(); i++) {
+                            double classifiedLabel = tree.classifyInstance(data.instance(i));
+                            classified.instance(i).setClassValue(classifiedLabel);
+                        }
+                        break;
+                }
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
             }
-
 
             // Remove Attribute
             // Resample
