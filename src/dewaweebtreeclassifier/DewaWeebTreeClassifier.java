@@ -7,7 +7,10 @@ package dewaweebtreeclassifier;
 
 import weka.core.Instances;
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Scanner;
@@ -144,6 +147,27 @@ public class DewaWeebTreeClassifier {
         newData.setClassIndex(newData.numAttributes() - 1);
         
         return newData;
+    }
+    
+    /**
+     * Method to save an already trained classifier
+     * @param path the file name and path for the saved model
+     * @param tree the classifier
+     * @throws Exception 
+     */
+    private void saveModel(String path, Classifier tree) throws Exception {
+        weka.core.SerializationHelper.write(path, tree);
+    }
+    
+    /**
+     * 
+     * @param path the file path where the saved model is located
+     * @return the classifier loaded from the file
+     * @throws Exception 
+     */
+    private Classifier loadModel(String path) throws Exception {
+        Classifier tree = (Classifier) weka.core.SerializationHelper.read(path);
+        return tree;
     }
 
     /**
