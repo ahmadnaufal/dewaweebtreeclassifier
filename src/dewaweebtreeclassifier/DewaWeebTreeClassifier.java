@@ -6,17 +6,17 @@
 package dewaweebtreeclassifier;
 
 import weka.core.Instances;
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Scanner;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.supervised.instance.Resample;
-import weka.classifiers.trees.J48;
 import weka.classifiers.Evaluation;
 import java.util.Random;
-import weka.classifiers.Classifier;
+import weka.classifiers.*;
+import weka.classifiers.bayes.NaiveBayes;
+import weka.core.Attribute;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Remove;
 import weka.filters.unsupervised.instance.RemovePercentage;
@@ -27,38 +27,60 @@ import weka.filters.unsupervised.instance.RemovePercentage;
  */
 public class DewaWeebTreeClassifier {
 
-    private static Instances mData;
+    private Instances mData;
+    private String loadedDataPath;
+    private Classifier classifier;
 
-    public static void printMain() {
+    public void printMain() {
         String dialog[] = {
             "Hai, apa yang ingin kamu lakukan?",
             "1. Load File",
             "2. Filter",
-            "3. Remove Attribute",
-            "4. Display Current Data",
-            "5. Training",
-            "6. Classify",};
+            "3. Display Attributes",
+            "4. Remove Attribute",
+            "5. Select Classifier",
+            "6. Training",
+            "7. Classify",};
+        
+        if (mData != null){
+            System.out.println("\nData: " + loadedDataPath);
+        }
+        
         for (String line : dialog) {
             System.out.println(line);
         }
     }
-
+    
+    enum Classifiers {
+        NAIVE_BAYES,
+        ID3,
+        C4_5,
+    }
+    
     enum Menu {
         NOOP,
         LOAD_FILE,
         FILTER,
+        DISPLAY_ATTRIBUTES,
         REMOVE,
-        DISPLAY_DATA,
+        SELECT_CLASSIFIER,
         TRAINING,
         CLASSIFY
     }
 
-    static Menu mainMenu[] = {
+    Classifiers classifiers[] = {
+        Classifiers.NAIVE_BAYES,
+        Classifiers.ID3,
+        Classifiers.C4_5
+    };
+    
+    Menu mainMenu[] = {
         Menu.NOOP,
         Menu.LOAD_FILE,
         Menu.FILTER,
+        Menu.DISPLAY_ATTRIBUTES,
         Menu.REMOVE,
-        Menu.DISPLAY_DATA,
+        Menu.SELECT_CLASSIFIER,
         Menu.TRAINING,
         Menu.CLASSIFY
     };
@@ -167,93 +189,95 @@ public class DewaWeebTreeClassifier {
         return tree;
     }
 
+    private void displayAttributes(Instances instances){
+        Enumeration attributes = instances.enumerateAttributes();
+        int i=0;
+        while (attributes.hasMoreElements()){
+            Attribute attr = (Attribute) attributes.nextElement();
+            System.out.println(String.valueOf(i) + " " + attr.toString());
+            i++;
+        }
+    }
+    
+    private void displayClassifiers(){
+        
+    }
+    private void selectClassifier(int selection){
+        Classifiers cls = this.classifiers[selection];
+        switch (cls){
+            case NAIVE_BAYES:
+                classifier = new NaiveBayes();
+                break;
+            case ID3:
+                classifier = new Veranda();
+                break;
+            case C4_5:
+                classifier = new Sujeong();
+                break;
+        }
+    }
     /**
      * 
      */
     public void run() {
         while (true) {
+            printMain();
             Scanner sc = new Scanner(System.in);
-            int choiceNum = sc.nextInt();
+            int choiceNum = Integer.parseInt(sc.nextLine());
             Menu chosenMenu = mainMenu[choiceNum];
-
             try {
                 switch (chosenMenu) {
                     case LOAD_FILE:
                         System.out.print("Please input file path: ");
-                        String filepath = sc.nextLine();
-                        this.loadFile(filepath);
+                        loadedDataPath = sc.nextLine();
+                        this.loadFile(loadedDataPath);
                         break;
                     case FILTER:
                         // resample case: Get the dataset and re-sample it to get a new dataset
                         mData = this.resampleInstances();
                         break;
+                    case DISPLAY_ATTRIBUTES:
+                        displayAttributes(mData);
+                        break;
                     case REMOVE:
                         // remove attributes
-                        System.out.print("Please input the attribute index to be removed: ");
+                        displayAttributes(mData);
+                        System.out.print("Please select the attribute index: ");
                         String idxStr = sc.nextLine();
                         String[] listIdxStr = idxStr.split("\\s+");
                         int[] listIdx = new int[listIdxStr.length];
                         for (int i = 0; i < listIdx.length; i++) {
                             listIdx[i] = Integer.parseInt(listIdxStr[i]);
                         }
-                        System.out.print("Invert selection? (Y/N)");
+                        System.out.print("Invert selection? (Y/N): ");
                         String invStr = sc.nextLine();
                         boolean isInv = false;
                         if (invStr.toLowerCase().compareTo("y") == 0)
                             isInv = true;
                         
                         mData = this.removeAttribute(listIdx, isInv);
-                        break;
-                    case DISPLAY_DATA:
-                        // Display data
                         break;  
+                    case SELECT_CLASSIFIER:
+                        displayClassifiers();
+                        int classifierSelection = Integer.parseInt(sc.nextLine());
+                        selectClassifier(classifierSelection);
                     case TRAINING:
                         // Train data
                         break;   
                     case CLASSIFY:
                         // Copy data
-                        Instances classified = new Instances(mData);
+//                        Instances classified = new Instances(mData);
                         // Classify data
-                        for (int i = 0; i < mData.numInstances(); i++) {
-                            double classifiedLabel = mData.classifyInstancemDatadata.instance(i));
-                            classified.instance(i).setClassValue(classifiedLabel);
-                        }
+                        //for (int i = 0; i < mData.numInstances(); i++) {
+                        //    double classifiedLabel = mData.classifyInstancemDatadata.instance(i));
+//                            classified.instance(i).setClassValue(classifiedLabel);
+//                        }
                         break;
                 }
             } catch (Exception ex) {
-                System.out.println(ex.getMessage());
+                System.out.println(ex.toString());
+                break;  
             }
-
-            // Remove Attribute
-            // Resample
-            // TODO: Pecah data jadi training set dan testing set dengan percentage split.
-            // Build Classifier
-            String[] options = new String[1];
-            options[0] = "-U";
-            J48 tree = new J48();
-            tree.setOptions(options);
-            // Testing model given test set
-            // 10-fold cross validation, percentage split
-            Evaluation eval = new Evaluation(data);
-            eval.crossValidateModel(tree, data, 10, new Random(1));
-            System.out.println(eval.toSummaryString("\nResults\n======\n", false));
-            // Using model to classify unseen data
-            Instances unclassified = new Instances(new BufferedReader(new FileReader("file.arff")));
-            unclassified.setClassIndex(unclassified(unclassified.numAttributes() - 1));
-            // Copy data
-            Instances classified = new Instances(unclassified);
-            // Classify data
-            for (int i = 0; i < unclassified.numInstances(); i++) {
-                double classifiedLabel = tree.classifyInstance(unclassified.instance(i));
-                classified.instance(i).setClassValue(classifiedLabel);
-            }   // Save data
-            BufferedWriter writer = new BufferedWriter(
-                    new FileWriter("classified.arff"));
-            writer.write(labeled.toString());
-            writer.newLine();
-            writer.flush();
-            writer.close();
-
         }
     }
 
