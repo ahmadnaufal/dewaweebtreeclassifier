@@ -5,18 +5,25 @@
  */
 package dewaweebtreeclassifier;
 
+import dewaweebtreeclassifier.veranda.VerandaTree;
 import weka.classifiers.*;
 import weka.core.Instances;
 /**
- *
+ * Veranda is a decision tree classifier model based on ID3 Decision Tree Algorithm
  * @author Ahmad
  */
 public class Veranda
         extends AbstractClassifier {
-
+    
+    protected VerandaTree mRoot;
+    
+    /**
+     * 
+     * @param data 
+     */
     @Override
-    public void buildClassifier(Instances i) throws Exception {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void buildClassifier(Instances data) {
+        mRoot.buildClassifier(data);
     }
     
 }
