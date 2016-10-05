@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package dewaweebtreeclassifier;
 
 import weka.core.Instances;
@@ -30,7 +25,11 @@ public class DewaWeebTreeClassifier {
     private Instances mData;
     private String loadedDataPath;
     private Classifier classifier;
+    Evaluation eval;
 
+    /**
+     *
+     */
     public void printMain() {
         String dialog[] = {
             "Hai, apa yang ingin kamu lakukan?",
@@ -52,6 +51,7 @@ public class DewaWeebTreeClassifier {
     }
     
     enum Classifiers {
+        NONE,
         NAIVE_BAYES,
         ID3,
         C4_5,
@@ -69,6 +69,7 @@ public class DewaWeebTreeClassifier {
     }
 
     Classifiers classifiers[] = {
+        Classifiers.NONE,
         Classifiers.NAIVE_BAYES,
         Classifiers.ID3,
         Classifiers.C4_5
@@ -137,19 +138,6 @@ public class DewaWeebTreeClassifier {
     
     /**
      * 
-     * @param tree the model to cross validate the dataset
-     * @return
-     * @throws Exception 
-     */
-    private Evaluation tenCrossValidation(Classifier tree) throws Exception {
-        Evaluation eval = new Evaluation(mData);
-        eval.crossValidateModel(tree, mData, 10, new Random(1));
-        
-        return eval;
-    }
-    
-    /**
-     * 
      * @param percent how many instances in the dataset will be processed
      * @param invertSelection invertSelection if true, percent of the dataset will be kept, instead of being removed
      * @return
@@ -188,7 +176,10 @@ public class DewaWeebTreeClassifier {
         Classifier tree = (Classifier) weka.core.SerializationHelper.read(path);
         return tree;
     }
-
+    /**
+     * 
+     * @param instances 
+     */
     private void displayAttributes(Instances instances){
         Enumeration attributes = instances.enumerateAttributes();
         int i=0;
@@ -198,10 +189,19 @@ public class DewaWeebTreeClassifier {
             i++;
         }
     }
-    
+    /**
+     * 
+     */
     private void displayClassifiers(){
-        
+        System.out.println("Classifier list: ");
+        System.out.println("1. Naive Bayes");
+        System.out.println("2. ID3");
+        System.out.println("3. C4.5");
     }
+    /**
+     * 
+     * @param selection 
+     */
     private void selectClassifier(int selection){
         Classifiers cls = this.classifiers[selection];
         switch (cls){
@@ -212,12 +212,107 @@ public class DewaWeebTreeClassifier {
                 classifier = new Veranda();
                 break;
             case C4_5:
-                classifier = new Sujeong();
+//                classifier = new Sujeong();
                 break;
         }
     }
+    
     /**
      * 
+     * @param tree the model to cross validate the dataset
+     * @return
+     * @throws Exception 
+     */
+    private Evaluation tenCrossValidation(Classifier tree) throws Exception {
+        Evaluation evaluation = new Evaluation(mData);
+        evaluation.crossValidateModel(tree, mData, 10, new Random(1));
+        return evaluation;
+    }
+    
+    /**
+     * 
+     * @param tree
+     * @return
+     * @throws Exception 
+     */
+    private Evaluation percentageSplitEvaluation(Classifier tree) throws Exception {
+        Random rand = new Random(1);
+        Instances randData = new Instances(mData);
+        randData.randomize(rand);
+        
+        Instances train = randData.trainCV(5, 1);
+        Instances test = randData.testCV(5,1);
+        
+        Evaluation evaluation = new Evaluation(train);
+        evaluation.evaluateModel(classifier, test);
+        return evaluation;
+    }
+    
+    /**
+     * 
+     * @param tree
+     * @param testData
+     * @return
+     * @throws Exception 
+     */
+    private Evaluation evaluateGivenTestData(Classifier tree, Instances testData) throws Exception{
+        Evaluation evaluation = new Evaluation(mData);
+        evaluation.evaluateModel(classifier, testData);
+        return evaluation;
+    }
+    
+    /**
+     * 
+     */
+    private void displayEvaluationMethods(){
+        System.out.println("Choose evaluation method: ");
+        System.out.println("1. 10-fold cross validation");
+        System.out.println("2. 80%-20% split");
+        System.out.println("3. Use additional testdata");
+    }
+    
+    /**
+     * 
+     * @param selection
+     * @throws Exception 
+     */
+    private void evaluateData(int selection) throws Exception{
+        switch(selection){
+            case 1:
+                eval = tenCrossValidation(classifier);
+                break;
+            case 2:
+                eval = percentageSplitEvaluation(classifier);
+                break;
+            case 3:
+                // Load data
+                System.out.print("Test data file path: ");
+                Scanner sc = new Scanner(System.in);
+                String testDataPath = sc.nextLine();
+                DataSource source = new DataSource(testDataPath);
+                Instances testData = source.getDataSet();
+                
+                // setting class attribute if the data format does not provide this information
+                // For example, the XRFF format saves the class attribute information as well
+                if (mData.classIndex() == -1) {
+                    mData.setClassIndex(mData.numAttributes() - 1);
+                }
+                
+                eval = evaluateGivenTestData(classifier, testData);
+                break;
+        }
+    }
+    
+    /**
+     * 
+     * @param evaluation 
+     */
+    private void displayEvaluation(Evaluation evaluation){
+        System.out.println(evaluation.toSummaryString());
+    }
+    
+    /**
+     *
      */
     public void run() {
         while (true) {
@@ -258,11 +353,18 @@ public class DewaWeebTreeClassifier {
                         mData = this.removeAttribute(listIdx, isInv);
                         break;  
                     case SELECT_CLASSIFIER:
+                        // Select the classifier
                         displayClassifiers();
+                        System.out.print("Choose classifier: ");                        
                         int classifierSelection = Integer.parseInt(sc.nextLine());
                         selectClassifier(classifierSelection);
                     case TRAINING:
-                        // Train data
+                        // Train and evaluate data
+                        displayEvaluationMethods();
+                        int validationMethod = Integer.parseInt(sc.nextLine());
+                        evaluateData(validationMethod);
+                        displayEvaluation(eval);
+
                         break;   
                     case CLASSIFY:
                         // Copy data
@@ -281,6 +383,10 @@ public class DewaWeebTreeClassifier {
         }
     }
 
+    /**
+     *
+     * @param args
+     */
     public static void main(String[] args) {
         try {
             DewaWeebTreeClassifier app = new DewaWeebTreeClassifier();
