@@ -1,5 +1,8 @@
 package dewaweebtreeclassifier;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import weka.core.Instances;
 import java.util.Enumeration;
 import java.util.logging.Level;
@@ -12,6 +15,7 @@ import java.util.Random;
 import weka.classifiers.*;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Attribute;
+import weka.core.converters.ArffSaver;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Remove;
 import weka.filters.unsupervised.instance.RemovePercentage;
@@ -24,6 +28,8 @@ public class DewaWeebTreeClassifier {
 
     private Instances mData;
     private String loadedDataPath;
+    private String testDataPath;
+    private String unclassifiedDataPath;
     private Classifier classifier;
     Evaluation eval;
 
@@ -288,7 +294,7 @@ public class DewaWeebTreeClassifier {
                 // Load data
                 System.out.print("Test data file path: ");
                 Scanner sc = new Scanner(System.in);
-                String testDataPath = sc.nextLine();
+                testDataPath = sc.nextLine();
                 DataSource source = new DataSource(testDataPath);
                 Instances testData = source.getDataSet();
                 
@@ -364,16 +370,28 @@ public class DewaWeebTreeClassifier {
                         int validationMethod = Integer.parseInt(sc.nextLine());
                         evaluateData(validationMethod);
                         displayEvaluation(eval);
-
                         break;   
                     case CLASSIFY:
-                        // Copy data
-//                        Instances classified = new Instances(mData);
+                        // Load data to classify
+                        System.out.print("Path to unclassified data: ");
+                        unclassifiedDataPath = sc.nextLine();
+                        DataSource source = new DataSource(unclassifiedDataPath);
+                        Instances unclassifiedData = source.getDataSet();
+                        
+                        // Copy the data
+                        Instances classified = new Instances(unclassifiedData);
+                        
                         // Classify data
-                        //for (int i = 0; i < mData.numInstances(); i++) {
-                        //    double classifiedLabel = mData.classifyInstancemDatadata.instance(i));
-//                            classified.instance(i).setClassValue(classifiedLabel);
-//                        }
+                        for (int i = 0; i < unclassifiedData.numInstances(); i++) {
+                            double classifiedLabel = classifier.classifyInstance(unclassifiedData.instance(i));
+                            classified.instance(i).setClassValue(classifiedLabel);
+                        }
+                        
+                        // Save the classified data
+                        ArffSaver saver = new ArffSaver();
+                        saver.setInstances(classified);
+                        saver.setFile(new File("data/classified_" + unclassifiedDataPath + ".arff"));
+                        saver.writeBatch();
                         break;
                 }
             } catch (Exception ex) {
