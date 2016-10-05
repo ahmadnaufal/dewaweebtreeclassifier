@@ -19,12 +19,14 @@ public class VerandaTree {
     
     protected VerandaTree[] mChild;
     protected Attribute mSplitAttribute;
+    protected double mClassValue;
+    protected int[] mClassDistribution;
     
     /**
      * The main constructor
      */
     public VerandaTree() {
-        
+        mSplitAttribute = null;
     }
     
     /**
@@ -57,18 +59,22 @@ public class VerandaTree {
         }
         int maxIdx = Utils.maxIndex(informationGains);
         
-        mSplitAttribute = data.attribute(maxIdx);
         if (Utils.eq(informationGains[maxIdx], 0)) {
-            
+            mClassDistribution = new int[data.numClasses()];
+            Enumeration enumInst = data.enumerateInstances();
+            while (enumInst.hasMoreElements()) {
+                Instance instance = (Instance) enumInst.nextElement();
+                mClassDistribution[(int) instance.classValue()]++;
+            }
+            mClassValue = Utils.maxIndex(mClassDistribution);
         } else {
+            mSplitAttribute = data.attribute(maxIdx);
             Instances[] splitInstances = splitInstancesOnAttribute(data, mSplitAttribute);
             mChild = new VerandaTree[mSplitAttribute.numValues()];
             for (int i = 0; i < mChild.length; i++) {
                 mChild[i].buildTree(splitInstances[i]);
             }
-        }
-        
-        
+        }        
     }
     
     /**
@@ -100,7 +106,7 @@ public class VerandaTree {
             nClass[(int) instance.classValue()]++;
         }
         
-        double entropy = 0;
+        double entropy = 0.0;
         for (int i = 0; i < data.numClasses(); i++) {
             if (nClass[i] > 0) {
                 double ratio = nClass[i]/data.numInstances();
