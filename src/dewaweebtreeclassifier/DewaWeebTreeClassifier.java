@@ -409,7 +409,7 @@ public class DewaWeebTreeClassifier {
                         break;
                 }
             } catch (Exception ex) {
-                System.out.println(ex.toString());
+                ex.printStackTrace();
                 break;  
             }
         }

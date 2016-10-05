@@ -6,6 +6,8 @@
 package dewaweebtreeclassifier.veranda;
 
 import java.util.Enumeration;
+import weka.classifiers.AbstractClassifier;
+import weka.classifiers.Sourcable;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -15,7 +17,9 @@ import weka.core.Utils;
  *
  * @author Ahmad
  */
-public class VerandaTree {
+public class VerandaTree
+        extends AbstractClassifier
+        implements Sourcable {
     
     protected VerandaTree[] mChild;
     protected Attribute mSplitAttribute;
@@ -33,6 +37,7 @@ public class VerandaTree {
      * 
      * @param data 
      */
+    @Override
     public void buildClassifier(Instances data) {
         // remove all instance with missing class value
         data.deleteWithMissingClass();
@@ -72,9 +77,25 @@ public class VerandaTree {
             Instances[] splitInstances = splitInstancesOnAttribute(data, mSplitAttribute);
             mChild = new VerandaTree[mSplitAttribute.numValues()];
             for (int i = 0; i < mChild.length; i++) {
+                mChild[i] = new VerandaTree();
                 mChild[i].buildTree(splitInstances[i]);
             }
         }        
+    }
+    
+    /**
+     * 
+     * @param instance
+     * @return 
+     * @throws java.lang.Exception 
+     */
+    @Override
+    public double classifyInstance(Instance instance) throws Exception {
+        if (mSplitAttribute == null) {
+            return mClassValue;
+        } else {
+            return mChild[(int) instance.value(mSplitAttribute)].classifyInstance(instance);
+        }
     }
     
     /**
@@ -126,12 +147,25 @@ public class VerandaTree {
     public Instances[] splitInstancesOnAttribute(Instances data, Attribute attr) {
         Instances[] splitInstances = new Instances[attr.numValues()];
         
+        for (int i = 0; i < attr.numValues(); i++) {
+            splitInstances[i] = new Instances(data, data.numInstances());
+        }
+        
         Enumeration enumInstance = data.enumerateInstances();
         while (enumInstance.hasMoreElements()) {
             Instance instance = (Instance) enumInstance.nextElement();
             splitInstances[(int) instance.value(attr)].add(instance);
         }
         
+        for (int i = 0; i < attr.numValues(); i++) {
+            splitInstances[i].compactify();
+        }
+        
         return splitInstances;
+    }
+
+    @Override
+    public String toSource(String string) throws Exception {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
