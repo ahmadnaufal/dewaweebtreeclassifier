@@ -252,11 +252,16 @@ public class DewaWeebTreeClassifier {
         Instances randData = new Instances(mData);
         randData.randomize(rand);
         
-        Instances train = randData.trainCV(5, 1);
-        Instances test = randData.testCV(5,1);
+        int trainSize = (int) Math.round(mData.numInstances() * 0.8);
+        int testSize = mData.numInstances() - trainSize;
+        
+        Instances train = new Instances(randData,0,trainSize);
+        Instances test = new Instances(randData,trainSize,testSize);
+        
+        tree.buildClassifier(train);
         
         Evaluation evaluation = new Evaluation(train);
-        evaluation.evaluateModel(classifier, test);
+        evaluation.evaluateModel(tree, test);
         return evaluation;
     }
     
@@ -268,8 +273,9 @@ public class DewaWeebTreeClassifier {
      * @throws Exception 
      */
     private Evaluation evaluateGivenTestData(Classifier tree, Instances testData) throws Exception{
+        tree.buildClassifier(mData);
         Evaluation evaluation = new Evaluation(mData);
-        evaluation.evaluateModel(classifier, testData);
+        evaluation.evaluateModel(tree, testData);
         return evaluation;
     }
     
@@ -288,7 +294,7 @@ public class DewaWeebTreeClassifier {
      * @param selection
      * @throws Exception 
      */
-    private void evaluateData(int selection) throws Exception{
+    private void evaluateClassifier(int selection) throws Exception{
         switch(selection){
             case 1:
                 eval = tenCrossValidation(classifier);
@@ -301,13 +307,14 @@ public class DewaWeebTreeClassifier {
                 System.out.print("Test data file path: ");
                 Scanner sc = new Scanner(System.in);
                 testDataPath = sc.nextLine();
+                
                 DataSource source = new DataSource(testDataPath);
                 Instances testData = source.getDataSet();
                 
                 // setting class attribute if the data format does not provide this information
                 // For example, the XRFF format saves the class attribute information as well
-                if (mData.classIndex() == -1) {
-                    mData.setClassIndex(mData.numAttributes() - 1);
+                if (testData.classIndex() == -1) {
+                    testData.setClassIndex(testData.numAttributes() - 1);
                 }
                 
                 eval = evaluateGivenTestData(classifier, testData);
@@ -377,11 +384,13 @@ public class DewaWeebTreeClassifier {
                         selectClassifier(classifierSelection);
                         break;
                     case TRAINING:
-                        // Train and evaluate data
+                        // Evaluate classifier
                         displayEvaluationMethods();
                         int validationMethod = Integer.parseInt(sc.nextLine());
-                        evaluateData(validationMethod);
+                        evaluateClassifier(validationMethod);
                         displayEvaluation(eval);
+                        // Build classifier for classifying
+                        classifier.buildClassifier(mData);
                         break;   
                     case CLASSIFY:
                         // Load data to classify
@@ -389,6 +398,9 @@ public class DewaWeebTreeClassifier {
                         unclassifiedDataPath = sc.nextLine();
                         DataSource source = new DataSource(unclassifiedDataPath);
                         Instances unclassifiedData = source.getDataSet();
+                        if (unclassifiedData.classIndex() == -1) {
+                            unclassifiedData.setClassIndex(unclassifiedData.numAttributes() - 1);
+                        }
                         // Copy the data
                         Instances classified = new Instances(unclassifiedData);
                         // Classify data
@@ -399,8 +411,10 @@ public class DewaWeebTreeClassifier {
                         // Save the classified data
                         ArffSaver saver = new ArffSaver();
                         saver.setInstances(classified);
-                        saver.setFile(new File("data/classified_" + unclassifiedDataPath + ".arff"));
+                        String savedFilePath = unclassifiedDataPath.split("arff")[0] + "classified.arff";
+                        saver.setFile(new File(savedFilePath));
                         saver.writeBatch();
+                        System.out.println("Data classified! Saved to " + savedFilePath);
                         break;
                     case SAVE_MODEL:
                         System.out.print("Save model to: ");
