@@ -40,12 +40,14 @@ public class DewaWeebTreeClassifier {
         String dialog[] = {
             "Hai, apa yang ingin kamu lakukan?",
             "1. Load File",
-            "2. Filter",
-            "3. Display Attributes",
-            "4. Remove Attribute",
-            "5. Select Classifier",
-            "6. Training",
-            "7. Classify",};
+            "2. Load Model",
+            "3. Filter",
+            "4. Display Attributes",
+            "5. Remove Attribute",
+            "6. Select Classifier",
+            "7. Training",
+            "8. Classify",
+            "9. Save Model"};
         
         if (mData != null){
             System.out.println("\nData: " + loadedDataPath);
@@ -66,12 +68,14 @@ public class DewaWeebTreeClassifier {
     enum Menu {
         NOOP,
         LOAD_FILE,
+        LOAD_MODEL,
         FILTER,
         DISPLAY_ATTRIBUTES,
         REMOVE,
         SELECT_CLASSIFIER,
         TRAINING,
-        CLASSIFY
+        CLASSIFY,
+        SAVE_MODEL
     }
 
     Classifiers classifiers[] = {
@@ -84,12 +88,14 @@ public class DewaWeebTreeClassifier {
     Menu mainMenu[] = {
         Menu.NOOP,
         Menu.LOAD_FILE,
+        Menu.LOAD_MODEL,
         Menu.FILTER,
         Menu.DISPLAY_ATTRIBUTES,
         Menu.REMOVE,
         Menu.SELECT_CLASSIFIER,
         Menu.TRAINING,
-        Menu.CLASSIFY
+        Menu.CLASSIFY,
+        Menu.SAVE_MODEL
     };
 
     /**
@@ -333,6 +339,11 @@ public class DewaWeebTreeClassifier {
                         loadedDataPath = sc.nextLine();
                         this.loadFile(loadedDataPath);
                         break;
+                    case LOAD_MODEL:
+                        System.out.print("Model file path: ");
+                        String loadedModelPath = sc.nextLine();
+                        classifier = loadModel(loadedModelPath);
+                        break;
                     case FILTER:
                         // resample case: Get the dataset and re-sample it to get a new dataset
                         mData = this.resampleInstances();
@@ -364,6 +375,7 @@ public class DewaWeebTreeClassifier {
                         System.out.print("Choose classifier: ");                        
                         int classifierSelection = Integer.parseInt(sc.nextLine());
                         selectClassifier(classifierSelection);
+                        break;
                     case TRAINING:
                         // Train and evaluate data
                         displayEvaluationMethods();
@@ -377,21 +389,23 @@ public class DewaWeebTreeClassifier {
                         unclassifiedDataPath = sc.nextLine();
                         DataSource source = new DataSource(unclassifiedDataPath);
                         Instances unclassifiedData = source.getDataSet();
-                        
                         // Copy the data
                         Instances classified = new Instances(unclassifiedData);
-                        
                         // Classify data
                         for (int i = 0; i < unclassifiedData.numInstances(); i++) {
                             double classifiedLabel = classifier.classifyInstance(unclassifiedData.instance(i));
                             classified.instance(i).setClassValue(classifiedLabel);
                         }
-                        
                         // Save the classified data
                         ArffSaver saver = new ArffSaver();
                         saver.setInstances(classified);
                         saver.setFile(new File("data/classified_" + unclassifiedDataPath + ".arff"));
                         saver.writeBatch();
+                        break;
+                    case SAVE_MODEL:
+                        System.out.print("Save model to: ");
+                        String saveModelPath = sc.nextLine();
+                        saveModel(saveModelPath, classifier);
                         break;
                 }
             } catch (Exception ex) {
