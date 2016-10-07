@@ -7,6 +7,7 @@ package dewaweebtreeclassifier;
 import java.util.*;
 import weka.classifiers.*;
 import weka.core.*;
+import weka.filters.Filter;
 import weka.filters.supervised.attribute.Discretize;
 
 /**
@@ -16,6 +17,7 @@ import weka.filters.supervised.attribute.Discretize;
 public class Sujeong extends AbstractClassifier {
     Sujeong[] children = null;
     Attribute bestAttr = null;
+    Discretize filter = null;
     double value = -1.0;
 
     public double computeGain(Instances data, Attribute attr) {
@@ -85,8 +87,9 @@ public class Sujeong extends AbstractClassifier {
     
     @Override
     public void buildClassifier(Instances instances) throws java.lang.Exception {
-        Discretize filter = new Discretize();
-        this.buildTree(instances);
+        filter = new Discretize();
+        filter.setInputFormat(instances);
+        this.buildTree(Filter.useFilter(instances, filter));
     }
     
    public Instances[] splitInstancesOnAttribute(Instances data, Attribute attr) {
@@ -110,7 +113,13 @@ public class Sujeong extends AbstractClassifier {
     }
 
     public double classifyInstance(Instance instance) throws java.lang.Exception {
+        if (filter != null) {
+            filter.input(instance);
+            instance = filter.output();
+        }
         if (bestAttr == null) return this.value;
-        else return children[(int)instance.value(bestAttr)].classifyInstance(instance);
+        else {
+            return children[(int)instance.value(bestAttr)].classifyInstance(instance);
+        }
     }
 }
