@@ -224,7 +224,7 @@ public class DewaWeebTreeClassifier {
                 classifier = new Veranda();
                 break;
             case C4_5:
-//                classifier = new Sujeong();
+                classifier = new Sujeong();
                 break;
         }
     }

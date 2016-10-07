@@ -7,14 +7,16 @@ package dewaweebtreeclassifier;
 import java.util.*;
 import weka.classifiers.*;
 import weka.core.*;
+import weka.filters.supervised.attribute.Discretize;
 
 /**
  *
  * @author Aufar
  */
 public class Sujeong extends AbstractClassifier {
-    Sujeong children[] = null;
-    double value = 0.0;
+    Sujeong[] children = null;
+    Attribute bestAttr = null;
+    double value = -1.0;
 
     public double computeGain(Instances data, Attribute attr) {
         double informationGain = computeEntropy(data);
@@ -22,7 +24,7 @@ public class Sujeong extends AbstractClassifier {
         for (Instances instances: splitInstances) {
             informationGain -= ((double) instances.numInstances()/(double) data.numInstances()) * computeEntropy(instances);
         }
-
+        
         return informationGain;
     }
 
@@ -33,15 +35,15 @@ public class Sujeong extends AbstractClassifier {
             Instance instance = (Instance) enumInstance.nextElement();
             nClass[(int) instance.classValue()]++;
         }
-
-        double entropy = 0;
+        
+        double entropy = 0.0;
         for (int i = 0; i < data.numClasses(); i++) {
             if (nClass[i] > 0) {
                 double ratio = nClass[i]/data.numInstances();
                 entropy -= (ratio * Utils.log2(ratio));
             }
         }
-
+        
         return entropy;
     }
 
@@ -55,47 +57,60 @@ public class Sujeong extends AbstractClassifier {
         else {
             Enumeration attrs = instances.enumerateAttributes();
             double informationGain = 0.0;
-            Attribute bestAttr = null;
             while (attrs.hasMoreElements()) {
                 Attribute attr = (Attribute)attrs.nextElement();
                 double tmpGain = computeGain(instances, attr);
                 if (tmpGain > informationGain) {
                     bestAttr = attr;
+                    informationGain = tmpGain;
                 }
             }
             if (bestAttr != null) {
                 double mode = instances.meanOrMode(instances.classIndex());
-                int chId = 0;
                 Instances[] chunks = splitInstancesOnAttribute(instances, bestAttr);
                 children = new Sujeong[chunks.length];
-                for (Instances chunk: chunks) {
-                    if (chunk.numInstances() > 0) children[chId++].buildTree(chunk);
-                    else children[chId++].value = mode;
+                for (int i = 0; i < chunks.length; ++i) {
+                    Instances chunk = chunks[i];
+                    Sujeong child = new Sujeong();
+                    children[i] = child;
+                    if (chunk.numInstances() > 0) child.buildTree(chunk);
+                    else child.value = mode;
                 }
             }
             else {
-                throw new Exception("Information Gain < 0.0");
+                this.value = instances.meanOrMode(instances.classIndex());
             }
         }
     }
+    
+    @Override
     public void buildClassifier(Instances instances) throws java.lang.Exception {
-        for (Instance inst: instances) {
-        }
+        Discretize filter = new Discretize();
         this.buildTree(instances);
     }
-    public Instances[] splitInstancesOnAttribute(Instances data, Attribute attr) {
+    
+   public Instances[] splitInstancesOnAttribute(Instances data, Attribute attr) {
         Instances[] splitInstances = new Instances[attr.numValues()];
-
+        
+        for (int i = 0; i < attr.numValues(); i++) {
+            splitInstances[i] = new Instances(data, data.numInstances());
+        }
+        
         Enumeration enumInstance = data.enumerateInstances();
         while (enumInstance.hasMoreElements()) {
             Instance instance = (Instance) enumInstance.nextElement();
             splitInstances[(int) instance.value(attr)].add(instance);
         }
-
+        
+        for (int i = 0; i < attr.numValues(); i++) {
+            splitInstances[i].compactify();
+        }
+        
         return splitInstances;
     }
 
-    public double classifyInstance(Instance instances) throws java.lang.Exception {
-        return 0.0;
+    public double classifyInstance(Instance instance) throws java.lang.Exception {
+        if (bestAttr == null) return this.value;
+        else return children[(int)instance.value(bestAttr)].classifyInstance(instance);
     }
 }
