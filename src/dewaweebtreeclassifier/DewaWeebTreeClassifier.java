@@ -47,7 +47,9 @@ public class DewaWeebTreeClassifier {
             "6. Select Classifier",
             "7. Training",
             "8. Classify",
-            "9. Save Model"};
+            "9. Save Model",
+            "10. Cluster"
+        };
         
         if (mData != null){
             System.out.println("\nData: " + loadedDataPath);
@@ -75,7 +77,8 @@ public class DewaWeebTreeClassifier {
         SELECT_CLASSIFIER,
         TRAINING,
         CLASSIFY,
-        SAVE_MODEL
+        SAVE_MODEL,
+        CLUSTER
     }
 
     Classifiers classifiers[] = {
@@ -95,7 +98,8 @@ public class DewaWeebTreeClassifier {
         Menu.SELECT_CLASSIFIER,
         Menu.TRAINING,
         Menu.CLASSIFY,
-        Menu.SAVE_MODEL
+        Menu.SAVE_MODEL,
+        Menu.CLUSTER
     };
 
     /**
@@ -411,7 +415,7 @@ public class DewaWeebTreeClassifier {
                         // Save the classified data
                         ArffSaver saver = new ArffSaver();
                         saver.setInstances(classified);
-                        String savedFilePath = unclassifiedDataPath.split("arff")[0] + "classified.arff";
+                        String savedFilePath = unclassifiedDataPath.split("arff")[0] + "classified.x.arff";
                         saver.setFile(new File(savedFilePath));
                         saver.writeBatch();
                         System.out.println("Data classified! Saved to " + savedFilePath);
@@ -420,6 +424,11 @@ public class DewaWeebTreeClassifier {
                         System.out.print("Save model to: ");
                         String saveModelPath = sc.nextLine();
                         saveModel(saveModelPath, classifier);
+                        break;
+                    case CLUSTER:
+                        System.out.println("Cluster:");
+                        MyAgnes cluster = new MyAgnes();
+                        cluster.buildClusterer(mData);
                         break;
                 }
             } catch (Exception ex) {
