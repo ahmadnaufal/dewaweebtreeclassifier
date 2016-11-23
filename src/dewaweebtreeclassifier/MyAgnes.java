@@ -1,7 +1,5 @@
 package dewaweebtreeclassifier;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import weka.clusterers.AbstractClusterer;
 import weka.core.EuclideanDistance;
 import weka.core.Instances;
@@ -133,7 +131,6 @@ public class MyAgnes extends AbstractClusterer {
             distanceMatrix[i][i] = 0;
             for (int j = i+1; j < numClusters; ++j) {
                 distanceMatrix[j][i] = distanceMatrix[i][j] = getInitClusterDistance(dataClusters[i], dataClusters[j]);
-                // distanceMatrix[j][i] = distanceMatrix[i][j];
             }
         }
 
@@ -155,12 +152,6 @@ public class MyAgnes extends AbstractClusterer {
     }
 
     private double getInitClusterDistance(ArrayList<Integer> cluster1, ArrayList<Integer> cluster2) {
-//        assert (mDistanceFunction != null);
-//        assert (mInstances != null);
-//        assert (cluster1 != null);
-//        assert (cluster2 != null);
-//        System.out.println(mInstances.instance(cluster1.get(0)));
-//        System.out.println(mInstances.instance(cluster2.get(0)));
         return mDistanceFunction.distance(mInstances.instance(cluster1.get(0)), mInstances.instance(cluster2.get(0)));
     }
 
