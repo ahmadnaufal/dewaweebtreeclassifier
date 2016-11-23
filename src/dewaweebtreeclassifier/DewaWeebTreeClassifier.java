@@ -50,23 +50,23 @@ public class DewaWeebTreeClassifier {
             "9. Save Model",
             "10. Cluster"
         };
-        
-        if (mData != null){
+
+        if (mData != null) {
             System.out.println("\nData: " + loadedDataPath);
         }
-        
+
         for (String line : dialog) {
             System.out.println(line);
         }
     }
-    
+
     enum Classifiers {
         NONE,
         NAIVE_BAYES,
         ID3,
         C4_5,
     }
-    
+
     enum Menu {
         NOOP,
         LOAD_FILE,
@@ -87,7 +87,7 @@ public class DewaWeebTreeClassifier {
         Classifiers.ID3,
         Classifiers.C4_5
     };
-    
+
     Menu mainMenu[] = {
         Menu.NOOP,
         Menu.LOAD_FILE,
@@ -103,9 +103,9 @@ public class DewaWeebTreeClassifier {
     };
 
     /**
-     * 
+     *
      * @param path the .arff or .csv file path
-     * @throws Exception 
+     * @throws Exception
      */
     private void loadFile(String path) throws Exception {
         // Load data
@@ -117,110 +117,118 @@ public class DewaWeebTreeClassifier {
             mData.setClassIndex(mData.numAttributes() - 1);
         }
     }
-    
+
     /**
      * resample instances from the whole dataset
+     *
      * @return new dataset after resampling
-     * @throws Exception 
+     * @throws Exception
      */
     private Instances resampleInstances() throws Exception {
         Resample sampler = new Resample();
         sampler.setInputFormat(mData);
-        
+
         Instances newData = Resample.useFilter(mData, sampler);
         newData.setClassIndex(newData.numAttributes() - 1);
-        
+
         return newData;
     }
-    
+
     /**
-     * 
-     * @param idxAttrs the list of indexes of the attributes to be removed (from 0)
-     * @param invertSelection if true, attributes in idxAttrs will be kept, instead of being removed
+     *
+     * @param idxAttrs the list of indexes of the attributes to be removed (from
+     * 0)
+     * @param invertSelection if true, attributes in idxAttrs will be kept,
+     * instead of being removed
      * @return new dataset after attribute removal
      */
     private Instances removeAttribute(int[] idxAttrs, boolean invertSelection) throws Exception {
         Remove remove = new Remove();
-        
+
         remove.setAttributeIndicesArray(idxAttrs);
         remove.setInvertSelection(invertSelection);
         remove.setInputFormat(mData);
-        
+
         Instances newData = Filter.useFilter(mData, remove);
         newData.setClassIndex(newData.numAttributes() - 1);
-        
+
         return newData;
     }
-    
+
     /**
-     * 
+     *
      * @param percent how many instances in the dataset will be processed
-     * @param invertSelection invertSelection if true, percent of the dataset will be kept, instead of being removed
+     * @param invertSelection invertSelection if true, percent of the dataset
+     * will be kept, instead of being removed
      * @return
-     * @throws Exception 
+     * @throws Exception
      */
     private Instances percentageSplit(double percent, boolean invertSelection) throws Exception {
         RemovePercentage split = new RemovePercentage();
-        
+
         split.setInvertSelection(invertSelection);
         split.setPercentage(percent);
         split.setInputFormat(mData);
-        
+
         Instances newData = Filter.useFilter(mData, split);
         newData.setClassIndex(newData.numAttributes() - 1);
-        
+
         return newData;
     }
-    
+
     /**
      * Method to save an already trained classifier
+     *
      * @param path the file name and path for the saved model
      * @param tree the classifier
-     * @throws Exception 
+     * @throws Exception
      */
     private void saveModel(String path, Classifier tree) throws Exception {
         weka.core.SerializationHelper.write(path, tree);
     }
-    
+
     /**
-     * 
+     *
      * @param path the file path where the saved model is located
      * @return the classifier loaded from the file
-     * @throws Exception 
+     * @throws Exception
      */
     private Classifier loadModel(String path) throws Exception {
         Classifier tree = (Classifier) weka.core.SerializationHelper.read(path);
         return tree;
     }
+
     /**
-     * 
-     * @param instances 
+     *
+     * @param instances
      */
-    private void displayAttributes(Instances instances){
+    private void displayAttributes(Instances instances) {
         Enumeration attributes = instances.enumerateAttributes();
-        int i=0;
-        while (attributes.hasMoreElements()){
+        int i = 0;
+        while (attributes.hasMoreElements()) {
             Attribute attr = (Attribute) attributes.nextElement();
             System.out.println(String.valueOf(i) + " " + attr.toString());
             i++;
         }
     }
+
     /**
-     * 
+     *
      */
-    private void displayClassifiers(){
+    private void displayClassifiers() {
         System.out.println("Classifier list: ");
         System.out.println("1. Naive Bayes");
         System.out.println("2. ID3");
         System.out.println("3. C4.5");
     }
+
     /**
-     * 
-     * @param selection 
+     *
+     * @param selection
      */
-    private void selectClassifier(int selection){
+    private void selectClassifier(int selection) {
         Classifiers cls = this.classifiers[selection];
-        switch (cls){
+        switch (cls) {
             case NAIVE_BAYES:
                 classifier = new NaiveBayes();
                 break;
@@ -232,74 +240,74 @@ public class DewaWeebTreeClassifier {
                 break;
         }
     }
-    
+
     /**
-     * 
+     *
      * @param tree the model to cross validate the dataset
      * @return
-     * @throws Exception 
+     * @throws Exception
      */
     private Evaluation tenCrossValidation(Classifier tree) throws Exception {
         Evaluation evaluation = new Evaluation(mData);
         evaluation.crossValidateModel(tree, mData, 10, new Random(1));
         return evaluation;
     }
-    
+
     /**
-     * 
+     *
      * @param tree
      * @return
-     * @throws Exception 
+     * @throws Exception
      */
     private Evaluation percentageSplitEvaluation(Classifier tree) throws Exception {
         Random rand = new Random(1);
         Instances randData = new Instances(mData);
         randData.randomize(rand);
-        
+
         int trainSize = (int) Math.round(mData.numInstances() * 0.8);
         int testSize = mData.numInstances() - trainSize;
-        
-        Instances train = new Instances(randData,0,trainSize);
-        Instances test = new Instances(randData,trainSize,testSize);
-        
+
+        Instances train = new Instances(randData, 0, trainSize);
+        Instances test = new Instances(randData, trainSize, testSize);
+
         tree.buildClassifier(train);
-        
+
         Evaluation evaluation = new Evaluation(train);
         evaluation.evaluateModel(tree, test);
         return evaluation;
     }
-    
+
     /**
-     * 
+     *
      * @param tree
      * @param testData
      * @return
-     * @throws Exception 
+     * @throws Exception
      */
-    private Evaluation evaluateGivenTestData(Classifier tree, Instances testData) throws Exception{
+    private Evaluation evaluateGivenTestData(Classifier tree, Instances testData) throws Exception {
         tree.buildClassifier(mData);
         Evaluation evaluation = new Evaluation(mData);
         evaluation.evaluateModel(tree, testData);
         return evaluation;
     }
-    
+
     /**
-     * 
+     *
      */
-    private void displayEvaluationMethods(){
+    private void displayEvaluationMethods() {
         System.out.println("Choose evaluation method: ");
         System.out.println("1. 10-fold cross validation");
         System.out.println("2. 80%-20% split");
         System.out.println("3. Use additional testdata");
     }
-    
+
     /**
-     * 
+     *
      * @param selection
-     * @throws Exception 
+     * @throws Exception
      */
-    private void evaluateClassifier(int selection) throws Exception{
-        switch(selection){
+    private void evaluateClassifier(int selection) throws Exception {
+        switch (selection) {
             case 1:
                 eval = tenCrossValidation(classifier);
                 break;
@@ -311,29 +319,29 @@ public class DewaWeebTreeClassifier {
                 System.out.print("Test data file path: ");
                 Scanner sc = new Scanner(System.in);
                 testDataPath = sc.nextLine();
-                
+
                 DataSource source = new DataSource(testDataPath);
                 Instances testData = source.getDataSet();
-                
+
                 // setting class attribute if the data format does not provide this information
                 // For example, the XRFF format saves the class attribute information as well
                 if (testData.classIndex() == -1) {
                     testData.setClassIndex(testData.numAttributes() - 1);
                 }
-                
+
                 eval = evaluateGivenTestData(classifier, testData);
                 break;
         }
     }
-    
+
     /**
-     * 
-     * @param evaluation 
+     *
+     * @param evaluation
      */
-    private void displayEvaluation(Evaluation evaluation){
+    private void displayEvaluation(Evaluation evaluation) {
         System.out.println(evaluation.toSummaryString());
     }
-    
+
     /**
      *
      */
@@ -375,15 +383,16 @@ public class DewaWeebTreeClassifier {
                         System.out.print("Invert selection? (Y/N): ");
                         String invStr = sc.nextLine();
                         boolean isInv = false;
-                        if (invStr.toLowerCase().compareTo("y") == 0)
+                        if (invStr.toLowerCase().compareTo("y") == 0) {
                             isInv = true;
-                        
+                        }
+
                         mData = this.removeAttribute(listIdx, isInv);
-                        break;  
+                        break;
                     case SELECT_CLASSIFIER:
                         // Select the classifier
                         displayClassifiers();
-                        System.out.print("Choose classifier: ");                        
+                        System.out.print("Choose classifier: ");
                         int classifierSelection = Integer.parseInt(sc.nextLine());
                         selectClassifier(classifierSelection);
                         break;
@@ -395,7 +404,7 @@ public class DewaWeebTreeClassifier {
                         displayEvaluation(eval);
                         // Build classifier for classifying
                         classifier.buildClassifier(mData);
-                        break;   
+                        break;
                     case CLASSIFY:
                         // Load data to classify
                         System.out.print("Path to unclassified data: ");
@@ -426,14 +435,29 @@ public class DewaWeebTreeClassifier {
                         saveModel(saveModelPath, classifier);
                         break;
                     case CLUSTER:
+                        System.out.println("Clusterer: ");
+                        System.out.println("1. MyKMeans");
+                        System.out.println("2. MyAgnes");
+                        int choice = Integer.parseInt(sc.nextLine());
                         System.out.println("Cluster:");
-                        MyAgnes cluster = new MyAgnes();
-                        cluster.buildClusterer(mData);
+                        switch (choice) {
+                            case 1: {
+                                MyKmeans cluster = new MyKmeans();
+                                cluster.buildClusterer(mData);
+                            }
+                            break;
+                            case 2: {
+                                MyAgnes cluster = new MyAgnes();
+                                cluster.buildClusterer(mData);
+                            }
+                            break;
+                            default:
+                        }
                         break;
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
-                break;  
+                break;
             }
         }
     }
