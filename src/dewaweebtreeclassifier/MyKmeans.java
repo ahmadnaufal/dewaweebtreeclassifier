@@ -49,6 +49,14 @@ public class MyKmeans
     ArrayList<Instance> centroidList;
     ArrayList< Instances> clusters;
     DistanceFunction distanceFunction;
+    
+    public MyKmeans() {
+        numOfClusters = 2;
+    }
+    
+    public MyKmeans(int nClusters) {
+        numOfClusters = nClusters;
+    }
 
     public int getNumOfClusters() {
         return numOfClusters;
