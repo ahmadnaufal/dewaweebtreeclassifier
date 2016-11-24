@@ -4,14 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Vector;
-import weka.core.Attribute;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.DenseInstance;
 import weka.core.DistanceFunction;
 import weka.core.EuclideanDistance;
 import weka.core.Instance;
-import weka.core.InstanceComparator;
 import weka.core.Instances;
 import weka.core.TechnicalInformation;
 import weka.core.TechnicalInformationHandler;
@@ -69,7 +67,7 @@ public class MyKmeans
 
     @Override
     public String doNotCheckCapabilitiesTipText() {
-        return super.doNotCheckCapabilitiesTipText(); //To change body of generated methods, choose Tools | Templates.
+        return super.doNotCheckCapabilitiesTipText();
     }
 
     @Override
@@ -139,13 +137,8 @@ public class MyKmeans
                 }
 //                System.out.println(Arrays.toString(values));
                 DenseInstance nc = new DenseInstance(1.0, values);
-//                System.out.println("Old Centroid: " + new DenseInstance(centroids.instance(i)).toString());
-//                System.out.println("New Centroid: " + nc.toString());
                 newCentroids.add(nc);
             }
-            // Convergence check
-//            System.out.println(Arrays.toString(oldAssignments));
-//            System.out.println(Arrays.toString(clusterAssignments));
             centroids = newCentroids;
             if (Arrays.equals(oldAssignments, clusterAssignments)) {
                 converged = true;
