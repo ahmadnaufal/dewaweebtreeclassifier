@@ -55,7 +55,7 @@ public class MyKmeans
     public int getNumOfClusters() {
         return numOfClusters;
     }
-
+    
     @Override
     public Capabilities getCapabilities() {
         Capabilities result = super.getCapabilities();
@@ -91,7 +91,7 @@ public class MyKmeans
         for (int i = 0; i < numOfClusters; i++) {
             Instance centroid;
             int clusterIdx = rand.nextInt(numOfClusters);
-            while (clusterIdx == prevIdx){
+            while (clusterIdx == prevIdx) {
                 clusterIdx = rand.nextInt(numOfClusters);
             }
             centroid = new DenseInstance(instances.instance(clusterIdx));
@@ -99,11 +99,12 @@ public class MyKmeans
             centroids.add(centroid);
         }
 
-        // Cluster all instances. Iterate until converges
+        // Cluster all instances. Iterate until converges or max iteration limit exceeded
         int clusterAssignments[] = new int[instances.numInstances()];
         int[] oldAssignments = new int[instances.numInstances()];
         boolean converged = false;
-        while (!converged) {
+        int it = 0;
+        while (!converged || it == 1000) {
             // Cluster all instances.
             System.arraycopy(clusterAssignments, 0, oldAssignments, 0, clusterAssignments.length);
             for (int j = 0; j < instances.numInstances(); j++) {
@@ -115,7 +116,7 @@ public class MyKmeans
 //                    System.out.println("Instance " + String.valueOf(j));
 //                    System.out.println("Distance to cluster" + String.valueOf(i));
 //                    System.out.println(temp);
-                    if (temp < best) {
+                    if (temp <= best) {
                         best = temp;
                         ctrIdx = i;
                     }
@@ -134,10 +135,9 @@ public class MyKmeans
                 }
                 // Calculate means
                 for (int j = 0; j < temp.numAttributes(); j++) {
-                    if (temp.attribute(j).isNominal()) {
-                        values[j] = temp.meanOrMode(j);
-                    }
+                    values[j] = temp.meanOrMode(j);
                 }
+//                System.out.println(Arrays.toString(values));
                 DenseInstance nc = new DenseInstance(1.0, values);
 //                System.out.println("Old Centroid: " + new DenseInstance(centroids.instance(i)).toString());
 //                System.out.println("New Centroid: " + nc.toString());
@@ -147,16 +147,19 @@ public class MyKmeans
 //            System.out.println(Arrays.toString(oldAssignments));
 //            System.out.println(Arrays.toString(clusterAssignments));
             centroids = newCentroids;
-            if (Arrays.equals(oldAssignments, clusterAssignments)){
+            if (Arrays.equals(oldAssignments, clusterAssignments)) {
                 converged = true;
             }
+            else {
+                it++;
+            }
         }
-        
+
         // Print clustering result
-        for (int i =0;i<centroids.numInstances();i++){
+        for (int i = 0; i < centroids.numInstances(); i++) {
             System.out.println("Cluster " + String.valueOf(i) + ": ");
-            for (int j=0;j<clusterAssignments.length;j++){
-                if (clusterAssignments[j] == i){
+            for (int j = 0; j < clusterAssignments.length; j++) {
+                if (clusterAssignments[j] == i) {
                     System.out.print(String.valueOf(j) + " ");
                 }
             }
@@ -178,7 +181,7 @@ public class MyKmeans
         }
         return cluster;
     }
-    
+
     @Override
     public int numberOfClusters() throws Exception {
         return Math.min(numOfClusters, instances.numInstances());
