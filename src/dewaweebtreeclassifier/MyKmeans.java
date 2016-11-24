@@ -102,7 +102,7 @@ public class MyKmeans
         int[] oldAssignments = new int[instances.numInstances()];
         boolean converged = false;
         int it = 0;
-        while (!converged || it == 1000) {
+        while (!converged && it < 1000) {
             // Cluster all instances.
             System.arraycopy(clusterAssignments, 0, oldAssignments, 0, clusterAssignments.length);
             for (int j = 0; j < instances.numInstances(); j++) {

@@ -438,8 +438,8 @@ public class DewaWeebTreeClassifier {
                         System.out.println("Clusterer: ");
                         System.out.println("1. MyKMeans");
                         System.out.println("2. MyAgnes");
+                        System.out.print("Choice: ");
                         int choice = Integer.parseInt(sc.nextLine());
-                        System.out.print("Number of clusters: ");
                         switch (choice) {
                             case 1: {
                                 MyKmeans cluster = new MyKmeans();
